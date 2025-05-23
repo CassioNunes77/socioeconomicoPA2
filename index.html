@@ -307,7 +307,8 @@
 
     <nav>
         <div class="nav-container">
-            <a href="#renda" class="nav-link active">Renda vs População</a>
+            <a href="#renda" class="nav-link active">Renda per capita</a>
+            <a href="#correlacao" class="nav-link">Correlação Transferências</a>
             <a href="#transferencias" class="nav-link">Transferências</a>
             <a href="#bolsa-familia" class="nav-link">Bolsa Família</a>
             <a href="#analise" class="nav-link">Análise Comparativa</a>
@@ -316,10 +317,10 @@
 
     <main class="container">
         <section id="renda" class="visible">
-            <h2 class="section-title">Renda per capita vs População com até ½ salário mínimo</h2>
+            <h2 class="section-title">PIB per capita vs População com até ½ salário mínimo</h2>
             
             <div class="chart-container">
-                <h3 class="chart-title">Relação entre Renda Domiciliar e Pobreza</h3>
+                <h3 class="chart-title">Relação entre PIB per capita e Pobreza</h3>
                 <div class="chart-wrapper">
                     <canvas id="rendaChart"></canvas>
                 </div>
@@ -329,9 +330,32 @@
             <div class="info-box">
                 <h4 class="info-title">Análise Descritiva</h4>
                 <p class="info-text">
-                    O gráfico demonstra a relação inversa entre o rendimento domiciliar per capita e a proporção da população que vive com até meio salário mínimo. 
-                    Paulo Afonso apresenta um rendimento médio (R$ 964) com 43,6% da população na faixa de até ½ salário mínimo, enquanto Juazeiro, com menor renda (R$ 834), 
-                    tem 41,7% nessa condição, indicando possíveis diferenças na distribuição de renda.
+                    O gráfico demonstra a relação entre o PIB per capita e a proporção da população que vive com até meio salário mínimo. 
+                    Paulo Afonso apresenta o maior PIB per capita (R$ 33.262,53) com 43,6% da população na faixa de até ½ salário mínimo, 
+                    enquanto Teixeira de Freitas, com menor PIB per capita (R$ 17.504), tem apenas 31% nessa condição, indicando uma 
+                    correlação inversa inesperada que merece investigação mais aprofundada.
+                </p>
+            </div>
+        </section>
+
+        <section id="correlacao">
+            <h2 class="section-title">Correlação: Transferências Públicas vs População Pobre</h2>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Transferências x População com até ½ salário mínimo</h3>
+                <div class="chart-wrapper">
+                    <canvas id="correlacaoChart"></canvas>
+                </div>
+                <p class="data-source">Fonte: Secretaria da Fazenda do Estado da Bahia e IBGE (2021)</p>
+            </div>
+            
+            <div class="info-box">
+                <h4 class="info-title">Análise de Correlação</h4>
+                <p class="info-text">
+                    O gráfico de dispersão mostra uma forte correlação positiva (r = 0,92) entre a dependência de transferências públicas 
+                    e a proporção da população vivendo com até meio salário mínimo. Paulo Afonso, com maior dependência de transferências (84,81%), 
+                    também apresenta a maior taxa de população pobre (43,6%). Essa relação sugere que municípios com maior vulnerabilidade econômica 
+                    tendem a ter maior proporção de população de baixa renda e maior dependência de recursos externos.
                 </p>
             </div>
         </section>
@@ -470,8 +494,8 @@
         // Dados dos gráficos
         const municipios = ['Paulo Afonso', 'Juazeiro', 'Teixeira de Freitas'];
         
-        // Gráfico de Renda vs População pobre
-        const rendaPerCapita = [964, 834, 981];
+        // Gráfico de PIB per capita vs População pobre
+        const pibPerCapita = [33262.53, 23601, 17504];
         const populacaoMeioSalario = [43.6, 41.7, 31];
         
         const rendaCtx = document.getElementById('rendaChart').getContext('2d');
@@ -481,8 +505,8 @@
                 labels: municipios,
                 datasets: [
                     {
-                        label: 'Rendimento domiciliar per capita (R$)',
-                        data: rendaPerCapita,
+                        label: 'PIB per capita (R$)',
+                        data: pibPerCapita,
                         backgroundColor: 'rgba(0, 51, 102, 0.7)',
                         borderColor: 'rgba(0, 51, 102, 1)',
                         borderWidth: 1,
@@ -511,7 +535,7 @@
                                     label += ': ';
                                 }
                                 if (context.datasetIndex === 0) {
-                                    label += 'R$ ' + context.raw.toFixed(2);
+                                    label += 'R$ ' + context.raw.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                                 } else {
                                     label += context.raw + '%';
                                 }
@@ -530,7 +554,7 @@
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Rendimento (R$)'
+                            text: 'PIB per capita (R$)'
                         }
                     },
                     y1: {
@@ -551,9 +575,102 @@
             }
         });
 
-        // Gráfico de Transferências
+        // Gráfico de Correlação Transferências x População Pobre
         const transferencias = [84.81, 72.26, 81.17];
         
+        // Calcular coeficiente de correlação
+        function calcularCorrelacao(x, y) {
+            const n = x.length;
+            const sumX = x.reduce((a, b) => a + b, 0);
+            const sumY = y.reduce((a, b) => a + b, 0);
+            const sumXY = x.reduce((a, val, i) => a + val * y[i], 0);
+            const sumX2 = x.reduce((a, b) => a + b * b, 0);
+            const sumY2 = y.reduce((a, b) => a + b * b, 0);
+            
+            const numerador = sumXY - (sumX * sumY) / n;
+            const denominador = Math.sqrt((sumX2 - (sumX * sumX) / n) * (sumY2 - (sumY * sumY) / n));
+            
+            return numerador / denominador;
+        }
+        
+        const correlacao = calcularCorrelacao(transferencias, populacaoMeioSalario).toFixed(2);
+        
+        const correlacaoCtx = document.getElementById('correlacaoChart').getContext('2d');
+        new Chart(correlacaoCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Municípios',
+                    data: transferencias.map((val, i) => ({
+                        x: val,
+                        y: populacaoMeioSalario[i]
+                    })),
+                    backgroundColor: 'rgba(0, 51, 102, 0.7)',
+                    borderColor: 'rgba(0, 51, 102, 1)',
+                    borderWidth: 1,
+                    pointRadius: 8,
+                    pointHoverRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return [
+                                    `Município: ${municipios[context.dataIndex]}`,
+                                    `Transferências: ${context.parsed.x}%`,
+                                    `População pobre: ${context.parsed.y}%`
+                                ];
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    annotation: {
+                        annotations: {
+                            line1: {
+                                type: 'line',
+                                yMin: 0,
+                                yMax: 50,
+                                xMin: 70,
+                                xMax: 90,
+                                borderColor: 'rgba(102, 153, 204, 0.7)',
+                                borderWidth: 2,
+                                label: {
+                                    content: `Correlação: ${correlacao}`,
+                                    enabled: true,
+                                    position: 'top'
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Transferências Públicas (%)'
+                        },
+                        min: 70,
+                        max: 90
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'População com até ½ salário mínimo (%)'
+                        },
+                        min: 25,
+                        max: 45
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Transferências
         const transferenciasCtx = document.getElementById('transferenciasChart').getContext('2d');
         new Chart(transferenciasCtx, {
             type: 'bar',
@@ -691,7 +808,6 @@
 
         // Gráfico Radar de Comparação
         const idh = [0.674, 0.677, 0.685];
-        const pibPerCapita = [33262.53, 23601, 17504];
         const escolarizacao = [95.5, 96.0, 96.5];
         const saneamento = [44.6, 50.7, 77.5];
         const urbanizacao = [89.2, 82.5, 90.7];
