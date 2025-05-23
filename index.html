@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Socioeconômico - Paulo Afonso/BA</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        :root {
+            --azul-escuro: #003366;
+            --azul-medio: #336699;
+            --azul-claro: #6699CC;
+            --cinza-claro: #F5F5F5;
+            --cinza-medio: #E0E0E0;
+            --branco: #FFFFFF;
+            --sombra: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--cinza-claro);
+            color: var(--azul-escuro);
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+            color: var(--branco);
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: var(--sombra);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--azul-claro);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        nav {
+            background-color: var(--branco);
+            box-shadow: var(--sombra);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+
+        .nav-link {
+            color: var(--azul-escuro);
+            text-decoration: none;
+            padding: 0.5rem 1.5rem;
+            margin: 0 0.5rem;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background-color: var(--azul-medio);
+            color: var(--branco);
+        }
+
+        .nav-link.active {
+            background-color: var(--azul-escuro);
+            color: var(--branco);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: var(--azul-claro);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 70%;
+        }
+
+        section {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--cinza-medio);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--azul-escuro);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--azul-medio);
+        }
+
+        .chart-container {
+            background-color: var(--branco);
+            border-radius: 8px;
+            box-shadow: var(--sombra);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-5px);
+        }
+
+        .chart-title {
+            color: var(--azul-escuro);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .info-box {
+            background-color: var(--branco);
+            border-left: 4px solid var(--azul-medio);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: var(--sombra);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .info-title {
+            color: var(--azul-escuro);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .info-text {
+            color: #555;
+        }
+
+        .data-source {
+            font-size: 0.8rem;
+            color: #777;
+            text-align: right;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .comparison-card {
+            background-color: var(--branco);
+            border-radius: 8px;
+            box-shadow: var(--sombra);
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .comparison-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            color: var(--azul-medio);
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--azul-escuro);
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .card-description {
+            color: #555;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+            color: var(--branco);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .footer-text {
+            margin-bottom: 1rem;
+        }
+
+        .footer-logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            display: inline-block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-wrap: wrap;
+            }
+            
+            .nav-link {
+                padding: 0.5rem;
+                margin: 0.3rem;
+                font-size: 0.9rem;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-wrapper {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Painel Socioeconômico</h1>
+            <p class="subtitle">Paulo Afonso - Bahia | Dados Fundamentados</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <a href="#renda" class="nav-link active">Renda vs População</a>
+            <a href="#transferencias" class="nav-link">Transferências</a>
+            <a href="#bolsa-familia" class="nav-link">Bolsa Família</a>
+            <a href="#analise" class="nav-link">Análise Comparativa</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section id="renda" class="visible">
+            <h2 class="section-title">Renda per capita vs População com até ½ salário mínimo</h2>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Relação entre Renda Domiciliar e Pobreza</h3>
+                <div class="chart-wrapper">
+                    <canvas id="rendaChart"></canvas>
+                </div>
+                <p class="data-source">Fonte: Dados socioeconômicos municipais (2020-2023)</p>
+            </div>
+            
+            <div class="info-box">
+                <h4 class="info-title">Análise Descritiva</h4>
+                <p class="info-text">
+                    O gráfico demonstra a relação inversa entre o rendimento domiciliar per capita e a proporção da população que vive com até meio salário mínimo. 
+                    Paulo Afonso apresenta um rendimento médio (R$ 964) com 43,6% da população na faixa de até ½ salário mínimo, enquanto Juazeiro, com menor renda (R$ 834), 
+                    tem 41,7% nessa condição, indicando possíveis diferenças na distribuição de renda.
+                </p>
+            </div>
+        </section>
+
+        <section id="transferencias">
+            <h2 class="section-title">Taxa de Transferência de Recursos Estaduais</h2>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Dependência de Transferências Públicas (2021)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="transferenciasChart"></canvas>
+                </div>
+                <p class="data-source">Fonte: Secretaria da Fazenda do Estado da Bahia (2021)</p>
+            </div>
+            
+            <div class="info-box">
+                <h4 class="info-title">Análise de Disparidades</h4>
+                <p class="info-text">
+                    As transferências de recursos públicos representam uma parcela significativa da economia local em todos os municípios analisados. 
+                    Paulo Afonso apresenta a maior dependência (84,81%), seguido por Teixeira de Freitas (81,17%) e Juazeiro (72,26%). 
+                    Essa alta dependência sugere vulnerabilidade econômica e a necessidade de diversificação das bases de arrecadação municipal.
+                </p>
+            </div>
+        </section>
+
+        <section id="bolsa-familia">
+            <h2 class="section-title">Beneficiários do Programa Bolsa Família</h2>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Cobertura do Bolsa Família por Município (2023)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="bolsaFamiliaChart"></canvas>
+                </div>
+                <p class="data-source">Fonte: Ministério da Cidadania - Cadastro Único (2023)</p>
+            </div>
+            
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h4 class="card-title">Paulo Afonso</h4>
+                    <div class="card-value">44.392</div>
+                    <p class="card-description">Beneficiários do Bolsa Família</p>
+                    <p class="card-description">37,3% da população estimada</p>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4 class="card-title">Juazeiro</h4>
+                    <div class="card-value">62.411</div>
+                    <p class="card-description">Beneficiários do Bolsa Família</p>
+                    <p class="card-description">24,5% da população estimada</p>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4 class="card-title">Teixeira de Freitas</h4>
+                    <div class="card-value">44.904</div>
+                    <p class="card-description">Beneficiários do Bolsa Família</p>
+                    <p class="card-description">29,3% da população estimada</p>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4 class="info-title">Análise de Pobreza</h4>
+                <p class="info-text">
+                    Apesar de Juazeiro ter o maior número absoluto de beneficiários, Paulo Afonso apresenta a maior proporção em relação à população total (37,3%), 
+                    indicando maior vulnerabilidade social. Teixeira de Freitas, com menor população, tem 29,3% de cobertura, sugerindo um perfil socioeconômico 
+                    ligeiramente melhor que os demais.
+                </p>
+            </div>
+        </section>
+
+        <section id="analise">
+            <h2 class="section-title">Análise Comparativa entre Municípios</h2>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Indicadores Socioeconômicos Principais</h3>
+                <div class="chart-wrapper">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <p class="data-source">Fonte: IBGE, Ministério da Economia, INEP (2010-2023)</p>
+            </div>
+            
+            <div class="info-box">
+                <h4 class="info-title">Principais Destaques</h4>
+                <p class="info-text">
+                    • <strong>PIB per capita</strong>: Paulo Afonso lidera (R$ 33.262,53), quase 50% superior a Juazeiro (R$ 23.601) <br>
+                    • <strong>IDH</strong>: Teixeira de Freitas tem o melhor índice (0,685), seguido por Juazeiro (0,677) e Paulo Afonso (0,674) <br>
+                    • <strong>Saneamento</strong>: Teixeira de Freitas destaca-se em esgotamento sanitário (77,5%) contra 44,6% em Paulo Afonso <br>
+                    • <strong>Educação</strong>: Todos com taxas de escolarização similares (95,5% a 96,5%) e IDEB próximo (4,5 a 4,6)
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p class="footer-text">Painel Socioeconômico de Paulo Afonso - Bahia</p>
+            <p class="footer-text">Dados atualizados em 2024 | Análise realizada pela SETIC</p>
+            <p class="footer-logo">SETIC - Secretaria de Turismo, Indústria e Comércio</p>
+        </div>
+    </footer>
+
+    <script>
+        // Observador de interseção para animações ao rolar
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Navegação suave SPA
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove classe active de todos os links
+                document.querySelectorAll('.nav-link').forEach(el => {
+                    el.classList.remove('active');
+                });
+                
+                // Adiciona classe active ao link clicado
+                this.classList.add('active');
+                
+                // Rola suavemente para a seção
+                const targetId = this.getAttribute('href');
+                document.querySelector(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Dados dos gráficos
+        const municipios = ['Paulo Afonso', 'Juazeiro', 'Teixeira de Freitas'];
+        
+        // Gráfico de Renda vs População pobre
+        const rendaPerCapita = [964, 834, 981];
+        const populacaoMeioSalario = [43.6, 41.7, 31];
+        
+        const rendaCtx = document.getElementById('rendaChart').getContext('2d');
+        new Chart(rendaCtx, {
+            type: 'bar',
+            data: {
+                labels: municipios,
+                datasets: [
+                    {
+                        label: 'Rendimento domiciliar per capita (R$)',
+                        data: rendaPerCapita,
+                        backgroundColor: 'rgba(0, 51, 102, 0.7)',
+                        borderColor: 'rgba(0, 51, 102, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'População com até ½ salário mínimo (%)',
+                        data: populacaoMeioSalario,
+                        backgroundColor: 'rgba(102, 153, 204, 0.7)',
+                        borderColor: 'rgba(102, 153, 204, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 0) {
+                                    label += 'R$ ' + context.raw.toFixed(2);
+                                } else {
+                                    label += context.raw + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Rendimento (R$)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'População (%)'
+                        },
+                        min: 0,
+                        max: 50,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Transferências
+        const transferencias = [84.81, 72.26, 81.17];
+        
+        const transferenciasCtx = document.getElementById('transferenciasChart').getContext('2d');
+        new Chart(transferenciasCtx, {
+            type: 'bar',
+            data: {
+                labels: municipios,
+                datasets: [{
+                    label: 'Transferências de recursos públicos (%)',
+                    data: transferencias,
+                    backgroundColor: [
+                        'rgba(0, 51, 102, 0.7)',
+                        'rgba(51, 102, 153, 0.7)',
+                        'rgba(102, 153, 204, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(0, 51, 102, 1)',
+                        'rgba(51, 102, 153, 1)',
+                        'rgba(102, 153, 204, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw + '%';
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Percentual de Transferências (%)'
+                        }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Gráfico de Bolsa Família
+        const bolsaFamilia = [44392, 62411, 44904];
+        const populacao = [119128, 254481, 153332];
+        const porcentagemBolsaFamilia = bolsaFamilia.map((valor, index) => (valor / populacao[index] * 100).toFixed(1));
+        
+        const bolsaFamiliaCtx = document.getElementById('bolsaFamiliaChart').getContext('2d');
+        new Chart(bolsaFamiliaCtx, {
+            type: 'bar',
+            data: {
+                labels: municipios,
+                datasets: [
+                    {
+                        label: 'Beneficiários do Bolsa Família',
+                        data: bolsaFamilia,
+                        backgroundColor: 'rgba(0, 51, 102, 0.7)',
+                        borderColor: 'rgba(0, 51, 102, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '% da População',
+                        data: porcentagemBolsaFamilia,
+                        backgroundColor: 'rgba(102, 153, 204, 0.7)',
+                        borderColor: 'rgba(102, 153, 204, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 0) {
+                                    label += context.raw.toLocaleString('pt-BR');
+                                } else {
+                                    label += context.raw + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Número de Beneficiários'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '% da População'
+                        },
+                        min: 0,
+                        max: 40,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico Radar de Comparação
+        const idh = [0.674, 0.677, 0.685];
+        const pibPerCapita = [33262.53, 23601, 17504];
+        const escolarizacao = [95.5, 96.0, 96.5];
+        const saneamento = [44.6, 50.7, 77.5];
+        const urbanizacao = [89.2, 82.5, 90.7];
+        
+        // Normalização dos dados para o radar (0-100)
+        function normalizeData(arr) {
+            const max = Math.max(...arr);
+            return arr.map(val => (val / max) * 100);
+        }
+        
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['IDH', 'PIB per capita', 'Escolarização 6-14 anos', 'Esgotamento sanitário', 'Taxa de urbanização'],
+                datasets: [
+                    {
+                        label: 'Paulo Afonso',
+                        data: [
+                            normalizeData(idh)[0],
+                            normalizeData(pibPerCapita)[0],
+                            normalizeData(escolarizacao)[0],
+                            normalizeData(saneamento)[0],
+                            normalizeData(urbanizacao)[0]
+                        ],
+                        backgroundColor: 'rgba(0, 51, 102, 0.2)',
+                        borderColor: 'rgba(0, 51, 102, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(0, 51, 102, 1)'
+                    },
+                    {
+                        label: 'Juazeiro',
+                        data: [
+                            normalizeData(idh)[1],
+                            normalizeData(pibPerCapita)[1],
+                            normalizeData(escolarizacao)[1],
+                            normalizeData(saneamento)[1],
+                            normalizeData(urbanizacao)[1]
+                        ],
+                        backgroundColor: 'rgba(51, 102, 153, 0.2)',
+                        borderColor: 'rgba(51, 102, 153, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(51, 102, 153, 1)'
+                    },
+                    {
+                        label: 'Teixeira de Freitas',
+                        data: [
+                            normalizeData(idh)[2],
+                            normalizeData(pibPerCapita)[2],
+                            normalizeData(escolarizacao)[2],
+                            normalizeData(saneamento)[2],
+                            normalizeData(urbanizacao)[2]
+                        ],
+                        backgroundColor: 'rgba(102, 153, 204, 0.2)',
+                        borderColor: 'rgba(102, 153, 204, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 153, 204, 1)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                let value = context.raw;
+                                const originalLabels = ['IDH', 'PIB per capita', 'Escolarização 6-14 anos', 'Esgotamento sanitário', 'Taxa de urbanização'];
+                                const index = context.dataIndex;
+                                
+                                // Recuperar valores originais
+                                let originalValue;
+                                if (originalLabels[index] === 'IDH') {
+                                    originalValue = idh[context.datasetIndex].toFixed(3);
+                                } else if (originalLabels[index] === 'PIB per capita') {
+                                    originalValue = 'R$ ' + pibPerCapita[context.datasetIndex].toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                                } else {
+                                    originalValue = [escolarizacao, saneamento, urbanizacao][index-2][context.datasetIndex] + '%';
+                                }
+                                
+                                return label + ': ' + originalValue;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
